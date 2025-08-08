@@ -1,4 +1,4 @@
-# app/main.py
+
 import os
 from fastapi import FastAPI, Request, Form, BackgroundTasks, Depends, status
 from fastapi.responses import RedirectResponse
@@ -11,7 +11,6 @@ from .database import SessionLocal, engine, Base
 from . import models
 from .email_utils import send_welcome_email
 
-# Create DB tables at startup (simple approach for beginner)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -20,7 +19,6 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# DB dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -44,7 +42,6 @@ def register_post(
         password: str = Form(...),
         db: Session = Depends(get_db),
 ):
-    # Basic duplicate check
     existing = db.query(models.User).filter(models.User.email == email).first()
     if existing:
         return templates.TemplateResponse(
@@ -57,10 +54,8 @@ def register_post(
     db.commit()
     db.refresh(user)
 
-    # Add background task to send welcome email (non-blocking for the HTTP response)
     background_tasks.add_task(send_welcome_email, user.email)
 
-    # Redirect to login with a query param to show a success message
     return RedirectResponse(url="/login?msg=registered", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/login")
@@ -75,5 +70,4 @@ def login_post(request: Request, email: str = Form(...), password: str = Form(..
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user or not pwd_context.verify(password, user.hashed_password):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
-    # For demo, we just display a success message. Add sessions/auth in a later step.
     return templates.TemplateResponse("login.html", {"request": request, "success": f"Welcome back, {email}!"})
