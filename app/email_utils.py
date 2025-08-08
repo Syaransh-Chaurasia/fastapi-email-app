@@ -10,7 +10,7 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")    # password or app-password or API 
 FROM_EMAIL = os.getenv("FROM_EMAIL", SMTP_USER or "no-reply@example.com")
 
 def send_welcome_email(to_email: str):
-    """Send a plain text welcome email synchronously. Intended to be run as a background task."""
+    print(f"[Email] Preparing to send email to {to_email}")
     msg = EmailMessage()
     msg["Subject"] = "Welcome to MyApp 🎉"
     msg["From"] = FROM_EMAIL
@@ -21,15 +21,15 @@ def send_welcome_email(to_email: str):
 
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+            print(f"[Email] Connecting to SMTP server {SMTP_HOST}:{SMTP_PORT}")
             server.ehlo()
-            # Use STARTTLS for common ports (587, 25, 2525)
             if SMTP_PORT in (587, 25, 2525):
                 server.starttls()
                 server.ehlo()
             if SMTP_USER and SMTP_PASSWORD:
+                print(f"[Email] Logging in as {SMTP_USER}")
                 server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
-            # For production you would log success to a file or monitoring system.
+            print(f"[Email] Email sent successfully to {to_email}")
     except Exception as e:
-        # For demo purposes we just print. Replace with proper logging in prod.
-        print("Failed to send email:", e)
+        print(f"[Email] Failed to send email: {e}")
